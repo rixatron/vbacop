@@ -10,6 +10,9 @@ obj
 bin
 *.exe
 
+### Personal ###
+*.home
+
 
 ### Linux ###
 *~
@@ -22,7 +25,6 @@ bin
 
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
-
 
 ### Windows ###
 # Windows image file caches
@@ -386,7 +388,10 @@ paket-files/
 
 # FAKE - F# Make
 .fake/
+build/
+test/
 
 # JetBrains Rider
 .idea/
 *.sln.iml
+
