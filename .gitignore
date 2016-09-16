@@ -12,6 +12,12 @@ bin
 
 ### Personal ###
 *.home
+.paket/
+src/blex
+src/byacc
+src/vbacop/VbaLexer.fs
+src/vbacop/VbaParser.fs
+src/vbacop/VbaParser.fsi
 
 
 ### Linux ###
