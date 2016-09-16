@@ -1,0 +1,88 @@
+%{ open System
+open Statements
+open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Text.Lexing
+open Microsoft.FSharp.Text.Parsing.ParseHelpers
+
+let log s = System.Diagnostics.Debug.WriteLine (sprintf "%A" s)
+
+let option_xor a b = List.reduce (fun x y -> match x with | Some _ -> x | None -> y) [a;b] 
+%}
+
+%start start
+%type <Statements.Prog> start
+%token <string> ID
+%token <string> TYPE
+%token <System.Int32> DIGIT INT
+%token EOS
+
+%token CALL CASE CLOSE CONST DECLARE DEFBOOL DEFBYTE DEFCUR DEFDATE DEFDBL DEFINT DEFLNG DEFLNGLG DEFLNGPTR DEFOBJ DEFSNG DEFSTR DEFVAR DIM DO ELSE ELSEIF END ENDIF ENUM ERASE EVENT EXIT FOR FRIEND FUNCTION GET GLOBAL GOSUB GOTO IF IMPLEMENTS INPUT LET LOCK LOOP LSET NEXT ON OPEN OPTION PRINT PRIVATE PUBLIC PUT RAISEEVENT REDIM RESUME RETURN RSET SEEK SELECT SET STATIC STOP SUB UNLOCK WEND WHILE WITH WRITE REM ANY AS BYREF BYVAL EACH IN SHARED UNTIL WITHEVENTS OPTIONAL PARAMARRAY PRESERVE SPC TAB THEN TO ADDRESSOF AND EQV IMP IS LIKE NEW MOD NOT OR TYPEOF XOR EXPLICIT COMPARE BINARY TEXT BASE PRIVATEMODULE EOF LPAREN RPAREN COMMA ENDSUB
+%% 
+
+start: Prog                 { $1 }
+ 
+Prog: StmtList subProcedureList  { {  Statements = (List.rev($1)); SubProcedures=(List.rev($2)) } }
+
+Stmt: 
+  | OPTION optionClause EOS { $2 }
+  | DIM Id AS Type EOS { log "declaration"; Declaration($2,$4) }
+
+StmtList: 
+  | {[]}
+  | Stmt { [$1] }
+  | StmtList Stmt       { $2 :: $1 } 
+
+optionClause: 
+  | EXPLICIT                    { Option(Explicit) }
+  | PRIVATEMODULE               { Option(PrivateModule) }
+  | COMPARE compareType         { Option($2) }
+  | BASE INT                    { Option(Base($2)) }
+
+compareType:
+  | BINARY                      { CompareOption(Binary) }
+  | TEXT                        { CompareOption(Text) }
+
+subProcedureList:
+  | {[]}
+  | subProcedure { [$1] }
+  | subProcedureList subProcedure { $2 :: $1 }
+
+subProcedure: 
+  | subDeclaration EOS StmtList ENDSUB EOS { log "subProc"; { Declaration = $1; Statements = $3 } }
+
+subDeclaration: 
+  | procedureScope procedureStatic SUB ID LPAREN procedureParameters RPAREN procedureStatic { { Scope=$1; Static=(option_xor $2 $8); Name=$4; Parameters = List.rev($6) } } 
+
+procedureParameters:
+  | positionalParam                             { [$1] }
+  | procedureParameters COMMA positionalParam   { $3 :: $1 }
+
+positionalParam:
+  | parameterMechanic ID parameterType { { Mechanic = $1; IsArray=fst($3); IsOptional=false; Type=snd($3); Name=$2 } }
+
+parameterType: parameterArrayDesignator AS TYPE { $1, Type($3) }
+
+parameterArrayDesignator:
+  |                             { false }
+  | LPAREN RPAREN               { true  }
+
+parameterMechanic:
+  |                             { None }
+  | BYVAL                       { Some(ByVal) }
+  | BYREF                       { Some(ByRef) }
+
+procedureStatic:
+  |                             { None }
+  | STATIC                      { Some(Static) }
+
+procedureScope:
+  |                             { None }
+  | GLOBAL                      { Some(Global)}
+  | PUBLIC                      { Some(Public)}
+  | PRIVATE                     { Some(Private)}
+  | FRIEND                      { Some(Friend)}
+
+Id:
+	| ID { $1 }
+Type:
+	| TYPE { $1 }

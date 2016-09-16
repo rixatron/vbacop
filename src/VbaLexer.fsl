@@ -1,0 +1,180 @@
+{
+
+module VbaLexer
+
+//Opens methods related to fslex.exe
+open Microsoft.FSharp.Text.Lexing
+open VbaParser
+
+let mutable startOfLine = 0;
+
+let newline (lexbuf: LexBuffer<_>) = 
+   lexbuf.StartPos <- lexbuf.StartPos.NextLine
+   startOfLine <- lexbuf.EndPos.AbsoluteOffset
+
+let symbols = [
+    "(", VbaParser.LPAREN
+    ")", VbaParser.RPAREN 
+    ",", VbaParser.COMMA ] |> Map.ofList
+
+let primitiveTypes = [
+  "Boolean", VbaParser.TYPE("Boolean");
+  "Byte", VbaParser.TYPE("Byte");
+  "Currency", VbaParser.TYPE("Currency");
+  "Date", VbaParser.TYPE("Date");
+  "Decimal", VbaParser.TYPE("Decimal");
+  "Double", VbaParser.TYPE("Double");
+  "Integer", VbaParser.TYPE("Integer");
+  "Long", VbaParser.TYPE("Long");
+  "LongLong", VbaParser.TYPE("LongLong");
+  "Single", VbaParser.TYPE("Single");
+  "String", VbaParser.TYPE("String");
+  "Empty", VbaParser.TYPE("Empty");
+  "Error", VbaParser.TYPE("Error");
+  "Null", VbaParser.TYPE("Null");
+  "Missing", VbaParser.TYPE("Missing") ] |> Map.ofList
+
+let keywords = [
+    "as",   VbaParser.AS;
+    "call", VbaParser.CALL;
+    "case", VbaParser.CASE;
+    "close", VbaParser.CLOSE;
+    "const", VbaParser.CONST;
+    "declare", VbaParser.DECLARE;
+    "defbool", VbaParser.DEFBOOL;
+    "defbyte", VbaParser.DEFBYTE;
+    "defcur", VbaParser.DEFCUR;
+    "defdate", VbaParser.DEFDATE;
+    "defdbl", VbaParser.DEFDBL;
+    "defint", VbaParser.DEFINT;
+    "deflng", VbaParser.DEFLNG;
+    "deflngLg", VbaParser.DEFLNGLG;
+    "deflngPtr", VbaParser.DEFLNGPTR;
+    "defobj", VbaParser.DEFOBJ;
+    "defsng", VbaParser.DEFSNG;
+    "defstr", VbaParser.DEFSTR;
+    "defvar", VbaParser.DEFVAR;
+    "Dim", VbaParser.DIM;
+    "do", VbaParser.DO;
+    "else", VbaParser.ELSE;
+    "elseif", VbaParser.ELSEIF;
+    "End Sub", VbaParser.ENDSUB;
+    //"End", VbaParser.END;
+    "End If", VbaParser.ENDIF;
+    "enum", VbaParser.ENUM;
+    "erase", VbaParser.ERASE;
+    "event", VbaParser.EVENT;
+    "exit", VbaParser.EXIT;
+    "for", VbaParser.FOR;
+    "friend", VbaParser.FRIEND;
+    "function", VbaParser.FUNCTION;
+    "get", VbaParser.GET;
+    "global", VbaParser.GLOBAL;
+    "gosub", VbaParser.GOSUB;
+    "goto", VbaParser.GOTO;
+    "if", VbaParser.IF;
+    "implements", VbaParser.IMPLEMENTS;
+    "input", VbaParser.INPUT;
+    "let", VbaParser.LET;
+    "lock", VbaParser.LOCK;
+    "loop", VbaParser.LOOP;
+    "lset", VbaParser.LSET;
+    "next", VbaParser.NEXT;
+    "on", VbaParser.ON;
+    "open", VbaParser.OPEN;
+    "Option", VbaParser.OPTION;
+    "print", VbaParser.PRINT;
+    "private", VbaParser.PRIVATE;
+    "public", VbaParser.PUBLIC;
+    "put", VbaParser.PUT;
+    "Not", VbaParser.NOT;
+    "Or", VbaParser.OR;
+    "TypeOf", VbaParser.TYPEOF;
+    "Xor", VbaParser.XOR;
+    "Explicit", VbaParser.EXPLICIT;
+    "Base", VbaParser.BASE;
+    "Compare", VbaParser.COMPARE;
+    "Sub", VbaParser.SUB;
+    //"End", VbaParser.END;
+    "Private Module", VbaParser.PRIVATEMODULE] |> Map.ofList
+
+let wlog s =
+    System.Console.WriteLine((sprintf "%A" s))
+    ()
+
+let logid x =
+    wlog x
+    x
+let matchSymbol (lexbuf:LexBuffer<_>) (col:Map<string,token>) =
+    match col.TryFind(LexBuffer<_>.LexemeString lexbuf) with
+           | Some(token) -> Some(token)
+           | None        -> None 
+
+let matchKeyword (lexbuf: LexBuffer<_>) =
+     match List.tryPick (fun x -> matchSymbol lexbuf x) [keywords;primitiveTypes] with
+         | Some(x) -> wlog x; x
+         | None -> logid (ID(LexBuffer<_>.LexemeString lexbuf))
+
+let failUnrecognized (lexbuf:LexBuffer<_>) =
+    let pos = sprintf "%i:%i" lexbuf.StartPos.Line lexbuf.StartPos.Column
+    let s = (sprintf "Unrecognized input '%s' at %A" (LexBuffer<_>.LexemeString lexbuf) pos)
+    System.Console.Write(s)
+    failwith s 
+
+let mutable blank = true
+}
+
+
+
+
+   // Regular expressions
+//   let tab-character = '\t'
+//   let eom-character = '\u0019'
+//   let space-character = '\u0020'
+//   let underscore = '\u005f'
+//   let DCCS-whitespace = '\u3000'
+//   let most-Unicode-class-Zs = ['\u0020' '\u00A0' '\u1680' '\u2000' '\u2001' '\u2002' '\u2003' '\u2004' '\u2005' '\u2006' '\u2007' '\u2008' '\u2009' '\u200A' '\u2028' '\u2029' '\u202F' '\u205F' '\u3000']
+   let whitespace = ['\t' ' ']
+   let newline = ('\n' | '\r' '\n')
+   let blankline = whitespace* newline
+   let char = ['a'-'z' 'A'-'Z']
+   let digit = ['0'-'9']
+   let endSub = "End Sub"
+   let identifier = char(char|digit|['-' '_' '.'])*
+   let continuation = '_' whitespace* newline
+   let eos = newline | ':'
+   let symbol = ['(' ')' ',']
+
+   rule tokenize = parse
+   // --------------------------
+   | whitespace { tokenize lexbuf }
+   | continuation { tokenize lexbuf }
+   | blankline { 
+                   if lexbuf.StartPos.AbsoluteOffset = startOfLine then 
+                        newline lexbuf;
+                        wlog "Blank line"; 
+                        tokenize lexbuf; 
+                   else 
+                        newline lexbuf;
+                        logid VbaParser.EOS  
+               }
+   | newline { newline lexbuf; tokenize lexbuf }
+   | eos  { wlog "EOS"; VbaParser.EOS }
+   | ['-']?digit+ { wlog "INT"; INT(System.Int32.Parse(LexBuffer<_>.LexemeString lexbuf)) }
+   | endSub { wlog "End Sub"; VbaParser.ENDSUB }
+   | identifier { matchKeyword lexbuf }
+   | symbol     { match matchSymbol lexbuf symbols with | Some x -> logid x; | None -> failUnrecognized lexbuf }
+   // --------------------------
+   |  eof          { wlog "EOF"; VbaParser.EOF }
+   | _  { failUnrecognized lexbuf }
+   //and newl = parse
+   //---------------------------
+   //| whitespace { newl lexbuf }
+   //| newline    { newline lexbuf; wlog "Blank line"; newl lexbuf }
+   //|  eof       { wlog "EOF"; VbaParser.EOF }
+   //| _          { lexbuf.EndPos <- lexbuf.StartPos.ShiftColumnBy(-1); lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(-1); tokenize lexbuf }
+   
+
+//match keywords.TryFind(LexBuffer<_>.LexemeString  lexbuf) with
+//                   | Some(token) -> System.Console.WriteLine (sprintf "%A" token); token
+//                   | None         -> System.Console.WriteLine "ID"; ID(LexBuffer<_>.LexemeString lexbuf)
