@@ -1,19 +1,31 @@
 module Statements
 open Microsoft.FSharp.Collections
 
-type NumberType = 
+type IntNumberType = 
   | Decimal
   | Hexadecimal
   | Octal
 
+type FloatNumberType = 
+  | Single
+  | Double
+  | Currency
+
 type IntValue =
   {
     Value : int
-    NumberType : NumberType
+    NumberType : IntNumberType
+  }
+
+type FloatValue =
+  {
+    Value : decimal
+    NumberType : FloatNumberType
   }
 
 type Value = 
  | Int of IntValue
+ | Float of FloatValue
 
 type Type = Type of string
 

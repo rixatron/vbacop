@@ -144,6 +144,11 @@ let getHexInt (l:LexBuffer<_>) =
     let f (s:string) = System.Convert.ToInt32(s.Replace("&h","").Replace("&H",""),16)
     parseNum l f
 
+let getFloat (l:LexBuffer<_>) =
+    let s = (getStr l).Replace("d", "E").Replace("D", "E")
+    System.Decimal.Parse(s, System.Globalization.NumberStyles.Float)
+    
+
 }
 
    // Regular expressions
@@ -162,6 +167,9 @@ let getHexInt (l:LexBuffer<_>) =
    let digit = ['0'-'9']
    let octLiteral = ['-']? '&' ['o' 'O']? octalDigit+
    let hexLiteral = ['-']? '&' ['h' 'H'] hexDigit+ 
+   let exponentLetter = ['D' 'E' 'd' 'e']
+   let exponent = exponentLetter ['+' '-']? digit+
+   let float = ['-']? digit+ exponent | ['-']? digit+ '.' digit? (exponent)? | ['-']? '.' digit+ (exponent)?
    let endSub = "End Sub"
    let identifier = char(char|digit|['-' '_' '.'])*
    let continuation = '_' whitespace* newline
@@ -184,6 +192,7 @@ let getHexInt (l:LexBuffer<_>) =
    | newline { newline lexbuf; tokenize lexbuf }
    | eos  { wlog "EOS"; VbaParser.EOS }
    // --------------------------
+   | float { wlog "FLOAT"; FLOAT({ Value = getFloat lexbuf; NumberType=Double }) }
    | ['-']?digit+ { wlog "LITINT"; INT({ Value = getDecimalInt lexbuf; NumberType=Decimal }) }
    | octLiteral { wlog "LITOCT"; INT({ Value = getOctalInt lexbuf; NumberType=Octal }) }
    | hexLiteral { wlog "LITHEX"; INT({ Value = getHexInt lexbuf; NumberType=Hexadecimal }) }

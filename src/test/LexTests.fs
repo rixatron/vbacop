@@ -57,3 +57,12 @@ type LexerTests ()=
         compare expected actual
 
 
+    [<Test; Sequential>]
+     member x.``Test float literal intialisation``
+               (
+                 [<Values("10.","10D2","10.1",".1E2",".1",".1d-2")>]i:string,
+                 [<Values(10.,1000,10.1,10,0.1,0.001)>]n:decimal
+               ) =
+        let actual = doLex i
+        let expected = [FLOAT({ Value=n;NumberType=Double});EOF]
+        compare expected actual
