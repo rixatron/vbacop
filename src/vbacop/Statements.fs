@@ -1,9 +1,19 @@
 module Statements
 open Microsoft.FSharp.Collections
 
-type Expr = 
- | Val of string 
- | Int of int
+type NumberType = 
+  | Decimal
+  | Hexadecimal
+  | Octal
+
+type IntValue =
+  {
+    Value : int
+    NumberType : NumberType
+  }
+
+type Value = 
+ | Int of IntValue
 
 type Type = Type of string
 

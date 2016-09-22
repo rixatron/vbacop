@@ -39,7 +39,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../vbacop.fsproj">
+    <ProjectReference Include="../vbacop/vbacop.fsproj">
       <Name>vbacop</Name>
       <Project>{4490ad42-f0cd-410b-8c48-762e9ddbeaf1}</Project>
       <Private>True</Private>

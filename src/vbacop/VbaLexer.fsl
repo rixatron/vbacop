@@ -5,6 +5,7 @@ module VbaLexer
 //Opens methods related to fslex.exe
 open Microsoft.FSharp.Text.Lexing
 open VbaParser
+open Statements
 
 let mutable startOfLine = 0;
 
@@ -15,7 +16,8 @@ let newline (lexbuf: LexBuffer<_>) =
 let symbols = [
     "(", VbaParser.LPAREN
     ")", VbaParser.RPAREN 
-    ",", VbaParser.COMMA ] |> Map.ofList
+    ",", VbaParser.COMMA 
+    "=", VbaParser.EQUALS ] |> Map.ofList
 
 let primitiveTypes = [
   "Boolean", VbaParser.TYPE("Boolean");
@@ -138,12 +140,15 @@ let mutable blank = true
    let newline = ('\n' | '\r' '\n')
    let blankline = whitespace* newline
    let char = ['a'-'z' 'A'-'Z']
+   let octalDigit = ['0'-'7']
+   let hexDigit = ['0'-'9' 'A'-'F' 'a'-'f']
    let digit = ['0'-'9']
+   let octalLiteral = '&' ['o' 'O']? octalDigit+
    let endSub = "End Sub"
    let identifier = char(char|digit|['-' '_' '.'])*
    let continuation = '_' whitespace* newline
    let eos = newline | ':'
-   let symbol = ['(' ')' ',']
+   let symbol = ['(' ')' ',' '=']
 
    rule tokenize = parse
    // --------------------------
@@ -160,7 +165,10 @@ let mutable blank = true
                }
    | newline { newline lexbuf; tokenize lexbuf }
    | eos  { wlog "EOS"; VbaParser.EOS }
-   | ['-']?digit+ { wlog "INT"; INT(System.Int32.Parse(LexBuffer<_>.LexemeString lexbuf)) }
+   | ['-']?digit+ { wlog "LITINT"; INT({ Value = System.Int32.Parse(LexBuffer<_>.LexemeString lexbuf); NumberType=Decimal }) }
+   | ['-']? '&' ['o' 'O'] octalDigit+ { wlog "LITOCT"; INT({ Value = System.Convert.ToInt32((LexBuffer<_>.LexemeString lexbuf).Substring(2), 8); NumberType=Octal }) }
+   | ['-']? '&' octalDigit+ { wlog "LITOCT"; INT({ Value = System.Convert.ToInt32((LexBuffer<_>.LexemeString lexbuf).Substring(1), 8); NumberType=Octal }) }
+   | '&' ['h' 'H'] hexDigit+ { wlog (LexBuffer<_>.LexemeString lexbuf); INT({ Value = System.Int32.Parse((LexBuffer<_>.LexemeString lexbuf).Substring(2),System.Globalization.NumberStyles.HexNumber); NumberType=Hexadecimal }) }
    | endSub { wlog "End Sub"; VbaParser.ENDSUB }
    | identifier { matchKeyword lexbuf }
    | symbol     { match matchSymbol lexbuf symbols with | Some x -> logid x; | None -> failUnrecognized lexbuf }
