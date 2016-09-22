@@ -123,11 +123,28 @@ let failUnrecognized (lexbuf:LexBuffer<_>) =
     System.Console.Write(s)
     failwith s 
 
-let mutable blank = true
+let getStr (lexbuf:LexBuffer<_>) =
+    LexBuffer<_>.LexemeString lexbuf
+
+let parseNum (l:LexBuffer<_>) (f:string->int) :int =    
+    let s = getStr l
+    let negate = s.[0] = '-'
+    let result = f (if negate then s.Remove(0,1) else s)
+    if negate then -result else result
+
+let getDecimalInt (l:LexBuffer<_>) = 
+    let f (s:string) = System.Convert.ToInt32(s)
+    parseNum l f
+
+let getOctalInt (l:LexBuffer<_>) =
+    let f (s:string) = System.Convert.ToInt32(s.Replace("&","").Replace("o","").Replace("O",""),8)
+    parseNum l f
+
+let getHexInt (l:LexBuffer<_>) =
+    let f (s:string) = System.Convert.ToInt32(s.Replace("&h","").Replace("&H",""),16)
+    parseNum l f
+
 }
-
-
-
 
    // Regular expressions
 //   let tab-character = '\t'
@@ -143,7 +160,8 @@ let mutable blank = true
    let octalDigit = ['0'-'7']
    let hexDigit = ['0'-'9' 'A'-'F' 'a'-'f']
    let digit = ['0'-'9']
-   let octalLiteral = '&' ['o' 'O']? octalDigit+
+   let octLiteral = ['-']? '&' ['o' 'O']? octalDigit+
+   let hexLiteral = ['-']? '&' ['h' 'H'] hexDigit+ 
    let endSub = "End Sub"
    let identifier = char(char|digit|['-' '_' '.'])*
    let continuation = '_' whitespace* newline
@@ -165,14 +183,14 @@ let mutable blank = true
                }
    | newline { newline lexbuf; tokenize lexbuf }
    | eos  { wlog "EOS"; VbaParser.EOS }
-   | ['-']?digit+ { wlog "LITINT"; INT({ Value = System.Int32.Parse(LexBuffer<_>.LexemeString lexbuf); NumberType=Decimal }) }
-   | ['-']? '&' ['o' 'O'] octalDigit+ { wlog "LITOCT"; INT({ Value = System.Convert.ToInt32((LexBuffer<_>.LexemeString lexbuf).Substring(2), 8); NumberType=Octal }) }
-   | ['-']? '&' octalDigit+ { wlog "LITOCT"; INT({ Value = System.Convert.ToInt32((LexBuffer<_>.LexemeString lexbuf).Substring(1), 8); NumberType=Octal }) }
-   | '&' ['h' 'H'] hexDigit+ { wlog (LexBuffer<_>.LexemeString lexbuf); INT({ Value = System.Int32.Parse((LexBuffer<_>.LexemeString lexbuf).Substring(2),System.Globalization.NumberStyles.HexNumber); NumberType=Hexadecimal }) }
+   // --------------------------
+   | ['-']?digit+ { wlog "LITINT"; INT({ Value = getDecimalInt lexbuf; NumberType=Decimal }) }
+   | octLiteral { wlog "LITOCT"; INT({ Value = getOctalInt lexbuf; NumberType=Octal }) }
+   | hexLiteral { wlog "LITHEX"; INT({ Value = getHexInt lexbuf; NumberType=Hexadecimal }) }
+   // --------------------------
    | endSub { wlog "End Sub"; VbaParser.ENDSUB }
    | identifier { matchKeyword lexbuf }
    | symbol     { match matchSymbol lexbuf symbols with | Some x -> logid x; | None -> failUnrecognized lexbuf }
-   // --------------------------
    |  eof          { wlog "EOF"; VbaParser.EOF }
    | _  { failUnrecognized lexbuf }
    //and newl = parse
