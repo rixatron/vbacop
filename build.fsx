@@ -23,6 +23,24 @@ Target "Clean" (fun _ ->
     CleanDirs [buildDir; deployDir; testDir]
 )
 
+Target "GenerateFiles" (fun _ ->
+    DeleteFiles [ "../vbacop/src/vbacop/VbaLexer.fs";"../vbacop/src/vbacop/VbaParser.fs";"../vbacop/src/vbacop/VbaParser.fsi"]
+    printfn "Generating lexer"
+    let timeout = System.TimeSpan.FromSeconds 10.0
+    let lexResult = ProcessHelper.ExecProcessAndReturnMessages(fun info -> 
+                                         info.FileName <- "packages/FsLexYacc/build/fslex.exe"
+                                         info.WorkingDirectory <- "."
+                                         info.Arguments <- "../vbacop/src/vbacop/VbaLexer.fsl --unicode -o ../vbacop/src/vbacop/VbaLexer.fs") timeout
+    printfn "Lex Result: Errors: %A Messages: %A" lexResult.Errors lexResult.Messages
+    printfn "Generating parser"
+    let parseResult = ProcessHelper.ExecProcessAndReturnMessages(fun info -> 
+                                         info.FileName <- "../vbacop/packages/FsLexYacc/build/fsyacc.exe"
+                                         info.WorkingDirectory <- "."
+                                         info.Arguments <- "../vbacop/src/vbacop/VbaParser.fsy --module VbaParser -o ../vbacop/src/vbacop/VbaParser.fs") timeout
+    printfn "Parse Result: Errors: %A Messages: %A" parseResult.Errors parseResult.Messages
+    //ProcessHelper.Shell.Exec("", "", null) |> ignore
+)
+
 Target "BuildApp" (fun _ ->
     // compile all projects below src/app/
     MSBuildDebug buildDir "Build" appReferences
@@ -51,10 +69,12 @@ Target "Deploy" (fun _ ->
 
 // Build order
 "Clean"
+  ==> "GenerateFiles"
   ==> "BuildApp"
   ==> "Deploy"
 
 "Clean" 
+  ==> "GenerateFiles"
   ==> "BuildTest" 
   ==> "Test"
 
