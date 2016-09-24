@@ -148,6 +148,16 @@ let getFloat (l:LexBuffer<_>) =
     let s = (getStr l).Replace("d", "E").Replace("D", "E")
     System.Decimal.Parse(s, System.Globalization.NumberStyles.Float)
     
+let parseDateTime (l:LexBuffer<_>) = 
+    let mutable s = (getStr l).Replace("#","").Replace(".",":")
+    if s.EndsWith("a") || s.EndsWith("p") then s <- s + "m"
+    System.DateTime.Parse(s)
+
+let parseTime (l:LexBuffer<_>) = 
+    let mutable s = (getStr l).Replace("#","").Replace(".",":")
+    if s.EndsWith("a") || s.EndsWith("p") then s <- s + "m"
+    let parsed = System.DateTime.Parse(s)
+    new System.DateTime(1899,12,30,parsed.Hour,parsed.Minute,parsed.Second)
 
 }
 
@@ -162,6 +172,7 @@ let getFloat (l:LexBuffer<_>) =
    let newline = ('\n' | '\r' '\n')
    let blankline = whitespace* newline
    let char = ['a'-'z' 'A'-'Z']
+   //---------------------------
    let octalDigit = ['0'-'7']
    let hexDigit = ['0'-'9' 'A'-'F' 'a'-'f']
    let digit = ['0'-'9']
@@ -170,6 +181,18 @@ let getFloat (l:LexBuffer<_>) =
    let exponentLetter = ['D' 'E' 'd' 'e']
    let exponent = exponentLetter ['+' '-']? digit+
    let float = ['-']? digit+ exponent | ['-']? digit+ '.' digit? (exponent)? | ['-']? '.' digit+ (exponent)?
+   //---------------------------
+   let longMonths = ("january" | "february" | "march" | "april" | "may" | "june" | "july" | "august" | "september" | "october" | "november" | "decmeber" | "January" | "February" | "March" | "April" | "May" | "June" | "July" | "August" | "September" | "October" | "November" | "December")
+   let shortMonths = ("jan" | "feb" | "mar" | "apr" | "jun" | "jul" | "aug" | "sep" | "oct" | "nov" | "dec" | "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec")
+   let months = longMonths | shortMonths
+   let ampm = ("am" | "pm" | "a" | "p")
+   let dateSeperator = (whitespace+ | whitespace* ['/' '-' ','] whitespace*)
+   let digitOrMonth = digit+ | months
+   let date =  (digitOrMonth dateSeperator digitOrMonth (dateSeperator digitOrMonth)?)
+   let timeSeperator = whitespace? [':' '.'] whitespace?
+   let time = digit+ whitespace+ ampm | digit+ timeSeperator digit+ (timeSeperator digit+)? (whitespace? ampm)? 
+   let dateTime = '#' whitespace? date whitespace time whitespace? '#' | '#' whitespace? date whitespace? '#'
+   //---------------------------
    let endSub = "End Sub"
    let identifier = char(char|digit|['-' '_' '.'])*
    let continuation = '_' whitespace* newline
@@ -196,6 +219,9 @@ let getFloat (l:LexBuffer<_>) =
    | ['-']?digit+ { wlog "LITINT"; INT({ Value = getDecimalInt lexbuf; NumberType=Decimal }) }
    | octLiteral { wlog "LITOCT"; INT({ Value = getOctalInt lexbuf; NumberType=Octal }) }
    | hexLiteral { wlog "LITHEX"; INT({ Value = getHexInt lexbuf; NumberType=Hexadecimal }) }
+   // --------------------------
+   | dateTime     { wlog "DATETIME"; DATETIME(parseDateTime lexbuf) }
+   | '#' time '#' { wlog "TIME"; DATETIME(parseTime lexbuf) }
    // --------------------------
    | endSub { wlog "End Sub"; VbaParser.ENDSUB }
    | identifier { matchKeyword lexbuf }

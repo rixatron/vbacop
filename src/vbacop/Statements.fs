@@ -26,6 +26,7 @@ type FloatValue =
 type Value = 
  | Int of IntValue
  | Float of FloatValue
+ | DateTimeValue of System.DateTime
 
 type Type = Type of string
 

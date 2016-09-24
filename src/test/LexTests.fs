@@ -66,3 +66,56 @@ type LexerTests ()=
         let actual = doLex i
         let expected = [FLOAT({ Value=n;NumberType=Double});EOF]
         compare expected actual
+
+    member x.DoDateTest (s:string) (d:System.DateTime) =
+        let actual = doLex s
+        let expected = [DATETIME(d);EOF] 
+        compare expected actual
+
+    [<Test>]
+    member x.``Test date intialisation dd-mmm-yyyy`` ()=
+        x.DoDateTest "#01-Mar-2016#" (new System.DateTime(2016,3,1))
+
+    [<Test>]
+    member x.``Test date intialisation dd-mmm-yyyy hh:mm am`` ()=
+        x.DoDateTest "#01-Mar-2016 06:15 am#" (new System.DateTime(2016,3,1,6,15,0))
+
+    [<Test>]
+    member x.``Test date intialisation dd-mmm-yyyy hh:mm a`` ()=
+        x.DoDateTest "#01-Mar-2016 06:15 a#" (new System.DateTime(2016,3,1,6,15,0))
+
+    [<Test>]
+    member x.``Test date intialisation dd-mmm-yyyy hh:mm pm`` ()=
+        x.DoDateTest "#01-Mar-2016 06:15 pm#" (new System.DateTime(2016,3,1,18,15,0))
+
+    [<Test>]
+    member x.``Test date intialisation dd-mmm-yyyy hh:mm p`` ()=
+        x.DoDateTest "#01-Mar-2016 06:15 p#" (new System.DateTime(2016,3,1,18,15,0))
+
+    [<Test>]
+    member x.``Test time intialisation hh:mm pm`` ()=
+        x.DoDateTest "#03:45 am#" (new System.DateTime(1899,12,30,3,45,0))
+
+    [<Test>]
+    member x.``Test time intialisation hh.mm pm`` ()=
+        x.DoDateTest "#03.45 pm#" (new System.DateTime(1899,12,30,15,45,0))
+
+    [<Test>]
+    member x.``Test time intialisation h p`` ()=
+        x.DoDateTest "#6 p#" (new System.DateTime(1899,12,30,18,0,0))
+
+    [<Test>]
+    member x.``Test time intialisation hh : mm pm`` ()=
+        x.DoDateTest "#03 : 45 am#" (new System.DateTime(1899,12,30,3,45,0))
+
+    [<Test>]
+    member x.``Test time intialisation hh:mm:ss pm`` ()=
+        x.DoDateTest "#03:45:30 am#" (new System.DateTime(1899,12,30,3,45,30))
+
+    [<Test>]
+    member x.``Test date intialisation dd,mm,yyyy`` ()=
+        x.DoDateTest "#01,03,2016#" (new System.DateTime(2016,1,3))
+
+    [<Test>]
+    member x.``Test date intialisation dd,mmmmmm`` ()=
+        x.DoDateTest "#01 August#" (new System.DateTime(2016,8,1))
