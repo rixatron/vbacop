@@ -123,8 +123,8 @@ type LexerTests ()=
     [<Test;Sequential>]
     member x.``Test basic string`` 
                (
-                 [<Values("\"Test String\"","\"Test \"\"String\"\"\"")>]i:string,
-                 [<Values("Test String", "Test \"String\"")>]n:string
+                 [<Values("\"Test String\"","\"Test \"\"String\"\"\"","\"\"")>]i:string,
+                 [<Values("Test String", "Test \"String\"", "")>]n:string
                ) =
         let actual = doLex i
         let expected = [STRING(n); EOF]
