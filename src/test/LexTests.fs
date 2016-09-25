@@ -119,3 +119,14 @@ type LexerTests ()=
     [<Test>]
     member x.``Test date intialisation dd,mmmmmm`` ()=
         x.DoDateTest "#01 August#" (new System.DateTime(2016,8,1))
+
+    [<Test;Sequential>]
+    member x.``Test basic string`` 
+               (
+                 [<Values("\"Test String\"","\"Test \"\"String\"\"\"")>]i:string,
+                 [<Values("Test String", "Test \"String\"")>]n:string
+               ) =
+        let actual = doLex i
+        let expected = [STRING(n); EOF]
+        compare expected actual
+          

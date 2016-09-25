@@ -223,17 +223,19 @@ let parseTime (l:LexBuffer<_>) =
    | dateTime     { wlog "DATETIME"; DATETIME(parseDateTime lexbuf) }
    | '#' time '#' { wlog "TIME"; DATETIME(parseTime lexbuf) }
    // --------------------------
+   | '"'  { comment (new System.Text.StringBuilder()) lexbuf }
+   // --------------------------
    | endSub { wlog "End Sub"; VbaParser.ENDSUB }
    | identifier { matchKeyword lexbuf }
    | symbol     { match matchSymbol lexbuf symbols with | Some x -> logid x; | None -> failUnrecognized lexbuf }
    |  eof          { wlog "EOF"; VbaParser.EOF }
    | _  { failUnrecognized lexbuf }
-   //and newl = parse
    //---------------------------
-   //| whitespace { newl lexbuf }
-   //| newline    { newline lexbuf; wlog "Blank line"; newl lexbuf }
-   //|  eof       { wlog "EOF"; VbaParser.EOF }
-   //| _          { lexbuf.EndPos <- lexbuf.StartPos.ShiftColumnBy(-1); lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(-1); tokenize lexbuf }
+   and comment sb = parse
+   | '"' '"'    { comment (sb.Append("\"")) lexbuf }
+   |  eof       { failwith "End of file before termination of string." }
+   | '"'        { wlog "LITSTRING"; STRING(sb.ToString()) }
+   | _          { comment (sb.Append(getStr lexbuf)) lexbuf }
    
 
 //match keywords.TryFind(LexBuffer<_>.LexemeString  lexbuf) with
