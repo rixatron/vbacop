@@ -184,6 +184,8 @@ let parseTime (l:LexBuffer<_>) =
    //---------------------------
    let longMonths = ("january" | "february" | "march" | "april" | "may" | "june" | "july" | "august" | "september" | "october" | "november" | "decmeber" | "January" | "February" | "March" | "April" | "May" | "June" | "July" | "August" | "September" | "October" | "November" | "December")
    let shortMonths = ("jan" | "feb" | "mar" | "apr" | "jun" | "jul" | "aug" | "sep" | "oct" | "nov" | "dec" | "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec")
+   let defKeyword = ("DefBool" | "DefByte" | "DefInt" | "DefLng" | "DefCur" | "DefSng" | "DefDbl" | "DefDec" | "DefDate" | "DefStr" | "DefObj" | "DefVar")
+   let letterRange = char '-' char
    let months = longMonths | shortMonths
    let ampm = ("am" | "pm" | "a" | "p")
    let dateSeperator = (whitespace+ | whitespace* ['/' '-' ','] whitespace*)
@@ -217,6 +219,8 @@ let parseTime (l:LexBuffer<_>) =
    | eos  { wlog "EOS"; VbaParser.EOS }
    // --------------------------
    | privateModule { wlog "Private module"; VbaParser.PRIVATEMODULE }
+   | defKeyword { wlog "DefType"; VbaParser.DEFK(getStr lexbuf) }
+   | letterRange { wlog "LetterRange"; VbaParser.DEFRANGE(getStr lexbuf) }
    // --------------------------
    | float { wlog "FLOAT"; FLOAT({ Value = getFloat lexbuf; NumberType=Double }) }
    | ['-']?digit+ { wlog "LITINT"; INT({ Value = getDecimalInt lexbuf; NumberType=Decimal }) }

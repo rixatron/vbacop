@@ -130,3 +130,9 @@ type LexerTests ()=
         let expected = [STRING(n); EOF]
         compare expected actual
           
+
+    [<Test>]
+    member x.``Test def types`` ()=
+        let actual = doLex "DefBool A-Z"
+        let expected = [DEFK("DefBool"); DEFRANGE("A-Z");EOF]
+        compare expected actual

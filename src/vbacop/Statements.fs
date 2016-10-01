@@ -32,6 +32,8 @@ type Type = Type of string
 
 type Declaration = string * string
 
+type DefRange = DefRange of string * string
+
 type CompareOption =
       | Text
       | Binary
