@@ -96,9 +96,9 @@ let keywords = [
     "Explicit", VbaParser.EXPLICIT;
     "Base", VbaParser.BASE;
     "Compare", VbaParser.COMPARE;
-    "Sub", VbaParser.SUB;
-    //"End", VbaParser.END;
-    "Private Module", VbaParser.PRIVATEMODULE] |> Map.ofList
+    "Text", VbaParser.TEXT;
+    "Binary", VbaParser.BINARY;
+    "Sub", VbaParser.SUB;] |> Map.ofList
 
 let wlog s =
     System.Console.WriteLine((sprintf "%A" s))
@@ -198,6 +198,7 @@ let parseTime (l:LexBuffer<_>) =
    let continuation = '_' whitespace* newline
    let eos = newline | ':'
    let symbol = ['(' ')' ',' '=']
+   let privateModule = "Private" ' ' "Module"
 
    rule tokenize = parse
    // --------------------------
@@ -214,6 +215,8 @@ let parseTime (l:LexBuffer<_>) =
                }
    | newline { newline lexbuf; tokenize lexbuf }
    | eos  { wlog "EOS"; VbaParser.EOS }
+   // --------------------------
+   | privateModule { wlog "Private module"; VbaParser.PRIVATEMODULE }
    // --------------------------
    | float { wlog "FLOAT"; FLOAT({ Value = getFloat lexbuf; NumberType=Double }) }
    | ['-']?digit+ { wlog "LITINT"; INT({ Value = getDecimalInt lexbuf; NumberType=Decimal }) }
