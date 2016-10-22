@@ -7,6 +7,17 @@ open Microsoft.FSharp.Text.Parsing.ParseHelpers
 let log s = System.Diagnostics.Debug.WriteLine (sprintf "%A" s)
 
 let option_xor a b = List.reduce (fun x y -> match x with | Some _ -> x | None -> y) [a;b] 
+
+let getArrayDecl(l,u) =
+    match l,u with
+      | Some a, None -> { UpperBound = a; LowerBound=None }
+      | Some a, Some b -> { LowerBound = Some a; UpperBound=b }
+
+let matchFirst i =
+    match i with 
+      | Some x, _ -> x 
+      | _ -> None; 
+
 %}
 
 %start start
@@ -18,6 +29,7 @@ let option_xor a b = List.reduce (fun x y -> match x with | Some _ -> x | None -
 %token <Statements.FloatValue> FLOAT
 %token <System.DateTime> DATETIME 
 %token <string> STRING DEFK DEFRANGE
+%token <string * string> TYPEDID
 %token EOS
 
 %token CALL CASE CLOSE CONST DECLARE DEFBOOL DEFBYTE DEFCUR DEFDATE DEFDBL DEFINT DEFLNG DEFLNGLG DEFLNGPTR DEFOBJ DEFSNG DEFSTR DEFVAR DIM DO ELSE ELSEIF END ENDIF ENUM ERASE EVENT EXIT FOR FRIEND FUNCTION GET GLOBAL GOSUB GOTO IF IMPLEMENTS INPUT LET LOCK LOOP LSET NEXT ON OPEN OPTION PRINT PRIVATE PUBLIC PUT RAISEEVENT REDIM RESUME RETURN RSET SEEK SELECT SET STATIC STOP SUB UNLOCK WEND WHILE WITH WRITE REM ANY AS BYREF BYVAL EACH IN SHARED UNTIL WITHEVENTS OPTIONAL PARAMARRAY PRESERVE SPC TAB THEN TO ADDRESSOF AND EQV IMP IS LIKE NEW MOD NOT OR TYPEOF XOR EXPLICIT COMPARE BINARY TEXT BASE PRIVATEMODULE EOF LPAREN RPAREN COMMA ENDSUB EQUALS
@@ -28,8 +40,75 @@ start: Prog                 { $1 }
 Prog: StmtList subProcedureList  { {  Statements = (List.rev($1)); SubProcedures=(List.rev($2)) } }
 
 Stmt: 
-  | OPTION optionClause EOS { $2 }
   | DIM Id AS Type EOS { log "declaration"; Declaration($2,$4) }
+
+moduleStatement:
+  | OPTION optionClause EOS { $2 }
+  | globalVariableDeclaration EOS { $1 }
+  | privateVariableDeclaration EOS { $1 }
+
+globalVariableDeclaration:
+  | GLOBAL moduleVariableDeclarationList { { Scope=GlobalModuleScope; Shared=false; Declarations=$2 } }
+
+publicVariableDeclaration:
+  | PUBLIC optionalShared moduleVariableDeclarationList { { Scope=PublicModuleScope; Shared=$2; Declarations=$3 } }
+
+privateVariableDeclaration:
+  | privateVariableDeclarationStart optionalShared moduleVariableDeclarationList  { { Scope=$1; Shared=$2; Declarations=$3 } }
+
+privateVariableDeclarationStart:
+  | PRIVATE { PrivateModuleScope }
+  | DIM     { PrivateModuleScope }
+
+moduleVariableDeclarationList:
+  | withEventsVariableDcl { [{ Declaration=$1; WithEvents=true }] } 
+  | variableDcl { [{ Declaration=$1; WithEvents=false }] }
+  | moduleVariableDeclarationList COMMA variableDcl { { Declaration=$3; WithEvents=false } :: $1 }
+  | moduleVariableDeclarationList COMMA withEventsVariableDcl { { Declaration=$3; WithEvents=false } :: $1 } 
+
+withEventsVariableDcl: 
+  | WITHEVENTS variableDcl { $2 }
+
+variableDcl:
+  | typedVariableDcl   { $1 }
+  | untypedVariableDcl { $1 }
+
+untypedVariableDcl:
+  | ID { { Name = UntypedName($1); Type = None } }
+  | ID arrayClause { { Name = UntypedName($1); Array= $2; } }
+  | ID asClause { { Name = UntypedName($1); Type = Some $2 } }
+
+typedVariableDcl:
+  | TYPEDID { { Name=TypedName(fst $1, snd $1); Type=None } }
+  | TYPEDID arrayDim { { Name=TypedName($1, Type=Type(snd $1)); Array=$2 } }
+
+arrayClause:
+  | arrayDim { $1 None }
+  | arrayDim asClause { $1 (Some $2) }
+
+asClause:
+  | AS NEW ID { AutoType($3) }
+  | AS TYPE { Type($2) }
+
+arrayDim:
+  | LPAREN RPAREN { fun construct t -> DynamicArrayDeclaration(t) }
+  | LPAREN boundsList RPAREN { fun construct t -> StaticArrayDeclaration((List.map getArrayDecl $2), t) }
+
+boundsList:
+  | dimSpec  { [$1] }
+  | boundsList COMMA dimSpec { $2 :: $1 }
+
+dimSpec:
+  | INT TO INT { Some $1.Value, Some $3.Value }
+  | INT { Some $1.Value, None }
+
+optionalShared:
+  |         { false }
+  | SHARED  { true  }
+
+//optionalAsClause: // Unable to find where this is used.
+//  |         { None }
+//  | AS TYPE { Some $2 }
 
 StmtList: 
   | {[]}
@@ -84,10 +163,10 @@ procedureStatic:
 
 procedureScope:
   |                             { None }
-  | GLOBAL                      { Some(Global)}
-  | PUBLIC                      { Some(Public)}
-  | PRIVATE                     { Some(Private)}
-  | FRIEND                      { Some(Friend)}
+  | GLOBAL                      { Some(GlobalProcedureScope)}
+  | PUBLIC                      { Some(PublicProcedureScope)}
+  | PRIVATE                     { Some(PrivateProcedureScope)}
+  | FRIEND                      { Some(FriendProcedureScope)}
 
 Id:
 	| ID { $1 }

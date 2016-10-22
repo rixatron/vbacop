@@ -28,9 +28,62 @@ type Value =
  | Float of FloatValue
  | DateTimeValue of System.DateTime
 
-type Type = Type of string
+type Type = 
+ | Type of string
+ | AutoType of string
+
+type Name =
+  | UntypedName of string
+  | TypedName of string * string
 
 type Declaration = string * string
+
+type ModuleDeclarationScope = 
+  | PublicModuleScope
+  | PrivateModuleScope
+  | GlobalModuleScope
+
+
+type StaticArrayDeclaration =
+  {
+    LowerBound : int option
+    UpperBound : int 
+  }
+
+type ArrayDeclaration =
+  | StaticArrayDeclaration of StaticArrayDeclaration list * Type option
+  | DynamicArrayDeclaration of Type option
+
+type NormalVariableDeclaration = 
+  {
+    Name : Name
+    Type : Type option
+  }
+
+type ArrayVariableDeclaration =
+  {
+    Name : Name
+    Array : ArrayDeclaration
+  }
+
+type VariableDeclaration =
+  | NormalVariableDeclaration of NormalVariableDeclaration
+  | ArrayVariableDeclaration of ArrayVariableDeclaration
+
+type ModuleDeclaration =
+  {
+    Declaration : NormalVariableDeclaration
+    WithEvents : bool
+  }
+
+type ModuleDeclarationList = 
+  {
+    Scope : ModuleDeclarationScope
+    Shared : bool
+    Declarations : ModuleDeclaration list
+  }
+
+type GlobalVariableDeclaration = ModuleDeclaration list
 
 type DefRange = DefRange of string * string
 
@@ -44,10 +97,15 @@ type Option =
       | PrivateModule
 
 type ProcedureScope =
-      | Global
-      | Public
-      | Private
-      | Friend
+      | GlobalProcedureScope
+      | PublicProcedureScope
+      | PrivateProcedureScope
+      | FriendProcedureScope
+
+type VariableScope = 
+      | GlobalVariableScope
+      | PublicVariableScope
+      | PrivateVariableScope
 
 type ProcedureStatic =
       | Static
@@ -76,8 +134,11 @@ type SubDeclaration =
   }
 
 type Statement =
-  | Option of Option
   | Declaration of Declaration
+
+type ModuleStatement =
+  | Option of Option
+  | ModuleDeclaration of ModuleDeclaration
 
 type SubProcedure = 
   {
@@ -87,7 +148,7 @@ type SubProcedure =
 
 type Prog = 
   { 
-    Statements : Statement list
+    Statements : ModuleStatement list
     SubProcedures : SubProcedure list
   }
 

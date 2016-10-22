@@ -36,3 +36,7 @@ type ParserTests ()=
   member x.``Test Single option private`` ()=
                   doParse "Option Private Module
                   " |> should equal {  Statements = [(Option(PrivateModule))]; SubProcedures=[] }
+  [<Test>]
+  member x.``Test Dim`` ()=
+                  doParse "Private Shared name() as Integer
+                  " |> should equal { Statements = [{ Scope=Private; Shared=true; Declarations=[{ Name="name"; Type="Integer"; Array=Some(DynamicArrayDeclaration); WithEvents=false}] }]; SubProcedures=[] }

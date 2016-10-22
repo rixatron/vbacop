@@ -36,6 +36,15 @@ let primitiveTypes = [
   "Null", VbaParser.TYPE("Null");
   "Missing", VbaParser.TYPE("Missing") ] |> Map.ofList
 
+let typeSymbols = [
+    "%", "Integer";
+    "&", "Long";
+    "^", "LongLong";
+    "!", "Single";
+    "#", "Double";
+    "@", "Currency";
+    "$", "String" ] |> Map.ofList
+
 let keywords = [
     "as",   VbaParser.AS;
     "call", VbaParser.CALL;
@@ -159,6 +168,12 @@ let parseTime (l:LexBuffer<_>) =
     let parsed = System.DateTime.Parse(s)
     new System.DateTime(1899,12,30,parsed.Hour,parsed.Minute,parsed.Second)
 
+let parseTypedIdentifier (l:LexBuffer<_>) =
+    let s = getStr lexBuffer
+    match typeSymbols.TryFind(s) with
+           | Some(t) -> TYPEDID(s.SubString(0,s.Length-1), t)
+           | None      -> failwith "ID ends with unrecognized symbol"
+
 }
 
    // Regular expressions
@@ -196,7 +211,10 @@ let parseTime (l:LexBuffer<_>) =
    let dateTime = '#' whitespace? date whitespace time whitespace? '#' | '#' whitespace? date whitespace? '#'
    //---------------------------
    let endSub = "End Sub"
+   let withEvents = "With Events"
    let identifier = char(char|digit|['-' '_' '.'])*
+   let typeSuffix = ['%' '&' '^' '!' '#' '@' '$']
+   let typedIdentifier = identifier typeSuffix
    let continuation = '_' whitespace* newline
    let eos = newline | ':'
    let symbol = ['(' ')' ',' '=']
@@ -233,6 +251,8 @@ let parseTime (l:LexBuffer<_>) =
    | '"'  { comment (new System.Text.StringBuilder()) lexbuf }
    // --------------------------
    | endSub { wlog "End Sub"; VbaParser.ENDSUB }
+   | withEvents { wlog "With Events"; VbaParser.WITHEVENTS }
+   | typedIdentifier { parseTypedIdentifier lexbuf }
    | identifier { matchKeyword lexbuf }
    | symbol     { match matchSymbol lexbuf symbols with | Some x -> logid x; | None -> failUnrecognized lexbuf }
    |  eof          { wlog "EOF"; VbaParser.EOF }
