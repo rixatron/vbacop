@@ -37,7 +37,7 @@ let matchFirst i =
 
 start: Prog                 { $1 }
  
-Prog: StmtList subProcedureList  { {  Statements = (List.rev($1)); SubProcedures=(List.rev($2)) } }
+Prog: moduleStmtList subProcedureList  { {  Statements = (List.rev($1)); SubProcedures=(List.rev($2)) } }
 
 Stmt: 
   | DIM Id AS Type EOS { log "declaration"; Declaration($2,$4) }
@@ -46,15 +46,16 @@ moduleStatement:
   | OPTION optionClause EOS { $2 }
   | globalVariableDeclaration EOS { $1 }
   | privateVariableDeclaration EOS { $1 }
+  | publicVariableDeclaration EOS { $1 }
 
 globalVariableDeclaration:
-  | GLOBAL moduleVariableDeclarationList { { Scope=GlobalModuleScope; Shared=false; Declarations=$2 } }
+  | GLOBAL moduleVariableDeclarationList { ModuleDeclarationList({ Scope=GlobalModuleScope; Shared=false; Declarations=$2 }) }
 
 publicVariableDeclaration:
-  | PUBLIC optionalShared moduleVariableDeclarationList { { Scope=PublicModuleScope; Shared=$2; Declarations=$3 } }
+  | PUBLIC optionalShared moduleVariableDeclarationList { ModuleDeclarationList({ Scope=PublicModuleScope; Shared=$2; Declarations=$3 }) }
 
 privateVariableDeclaration:
-  | privateVariableDeclarationStart optionalShared moduleVariableDeclarationList  { { Scope=$1; Shared=$2; Declarations=$3 } }
+  | privateVariableDeclarationStart optionalShared moduleVariableDeclarationList  { ModuleDeclarationList({ Scope=$1; Shared=$2; Declarations=$3 }) }
 
 privateVariableDeclarationStart:
   | PRIVATE { PrivateModuleScope }
@@ -74,13 +75,13 @@ variableDcl:
   | untypedVariableDcl { $1 }
 
 untypedVariableDcl:
-  | ID { { Name = UntypedName($1); Type = None } }
-  | ID arrayClause { { Name = UntypedName($1); Array= $2; } }
-  | ID asClause { { Name = UntypedName($1); Type = Some $2 } }
+  | ID { NormalVariableDeclaration({ Name = UntypedName($1); Type = None } }
+  | ID asClause { ArrayVariableDeclaration({ Name = UntypedName($1); Type = Some $2 }) }
+  | ID arrayClause { NormalVariableDeclaration({ Name = UntypedName($1); Array= $2; }) }
 
 typedVariableDcl:
-  | TYPEDID { { Name=TypedName(fst $1, snd $1); Type=None } }
-  | TYPEDID arrayDim { { Name=TypedName($1, Type=Type(snd $1)); Array=$2 } }
+  | TYPEDID { NormalVariableDeclaration({ Name=TypedName(fst $1, snd $1); Type=None }) }
+  | TYPEDID arrayDim { ArrayVariableDeclaration({ Name=TypedName($1, Type=Type(snd $1)); Array=$2 }) }
 
 arrayClause:
   | arrayDim { $1 None }
@@ -96,7 +97,7 @@ arrayDim:
 
 boundsList:
   | dimSpec  { [$1] }
-  | boundsList COMMA dimSpec { $2 :: $1 }
+  | boundsList COMMA dimSpec { $3 :: $1 }
 
 dimSpec:
   | INT TO INT { Some $1.Value, Some $3.Value }
@@ -106,9 +107,10 @@ optionalShared:
   |         { false }
   | SHARED  { true  }
 
-//optionalAsClause: // Unable to find where this is used.
-//  |         { None }
-//  | AS TYPE { Some $2 }
+moduleStmtList:
+  | {[]}
+  | moduleStatement { [$1] }
+  | moduleStmtList moduleStatement { $2 :: $1 }
 
 StmtList: 
   | {[]}

@@ -90,6 +90,7 @@ type DefRange = DefRange of string * string
 type CompareOption =
       | Text
       | Binary
+
 type Option = 
       | Explicit
       | CompareOption of CompareOption
@@ -139,6 +140,7 @@ type Statement =
 type ModuleStatement =
   | Option of Option
   | ModuleDeclaration of ModuleDeclaration
+  | ModuleDeclarationList of ModuleDeclarationList
 
 type SubProcedure = 
   {
