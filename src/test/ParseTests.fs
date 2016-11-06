@@ -39,4 +39,10 @@ type ParserTests ()=
   [<Test>]
   member x.``Test Dim`` ()=
                   doParse "Private Shared name() as Integer
-                  " |> should equal { Statements = [{ Scope=Private; Shared=true; Declarations=[{ Name="name"; Type="Integer"; Array=Some(DynamicArrayDeclaration); WithEvents=false}] }]; SubProcedures=[] }
+                  " |> should equal { 
+                                      Statements = [ ModuleDeclarationList(
+                                                                            { Scope=PrivateModuleScope; 
+                                                                              Shared=true; 
+                                                                              Declarations=[
+                                                                                              { 
+                                                                                                Declaration = ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); WithEvents=false}] })]; SubProcedures=[] }

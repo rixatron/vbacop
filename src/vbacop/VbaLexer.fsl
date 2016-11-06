@@ -95,8 +95,9 @@ let keywords = [
     "open", VbaParser.OPEN;
     "Option", VbaParser.OPTION;
     "print", VbaParser.PRINT;
-    "private", VbaParser.PRIVATE;
-    "public", VbaParser.PUBLIC;
+    "Private", VbaParser.PRIVATE;
+    "Public", VbaParser.PUBLIC;
+    "Shared", VbaParser.SHARED;
     "put", VbaParser.PUT;
     "Not", VbaParser.NOT;
     "Or", VbaParser.OR;
@@ -169,9 +170,9 @@ let parseTime (l:LexBuffer<_>) =
     new System.DateTime(1899,12,30,parsed.Hour,parsed.Minute,parsed.Second)
 
 let parseTypedIdentifier (l:LexBuffer<_>) =
-    let s = getStr lexBuffer
+    let s = getStr l
     match typeSymbols.TryFind(s) with
-           | Some(t) -> TYPEDID(s.SubString(0,s.Length-1), t)
+           | Some(t) -> TYPEDID(s.Substring(0,s.Length-1), t)
            | None      -> failwith "ID ends with unrecognized symbol"
 
 }
