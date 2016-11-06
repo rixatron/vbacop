@@ -153,14 +153,3 @@ type Prog =
     Statements : ModuleStatement list
     SubProcedures : SubProcedure list
   }
-
-let getArrayDecl(l,u) =
-    match l,u with
-      | Some a, None -> { UpperBound = a; LowerBound=None }
-      | Some a, Some b -> { LowerBound = Some a; UpperBound=b }
-      | _ -> failwith "guess i failed to make invalid states unrepresentable"
-
-let a = fun t -> StaticArrayDeclaration((List.map getArrayDecl []), t) 
-let t = fun t -> DynamicArrayDeclaration(t) 
-let construct t = StaticArrayDeclaration((List.map getArrayDecl []), t) 
-let constrcut2 t = DynamicArrayDeclaration(t) 

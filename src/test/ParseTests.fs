@@ -37,12 +37,20 @@ type ParserTests ()=
                   doParse "Option Private Module
                   " |> should equal {  Statements = [(Option(PrivateModule))]; SubProcedures=[] }
   [<Test>]
-  member x.``Test Dim`` ()=
-                  doParse "Private Shared name() as Integer
-                  " |> should equal { 
-                                      Statements = [ ModuleDeclarationList(
-                                                                            { Scope=PrivateModuleScope; 
-                                                                              Shared=true; 
-                                                                              Declarations=[
-                                                                                              { 
-                                                                                                Declaration = ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); WithEvents=false}] })]; SubProcedures=[] }
+  member x.``Test Module Dim`` ()=
+    doParse "Private Shared name() as Integer
+    " |> should equal { 
+                        Statements = [ ModuleDeclarationList(
+                                                              { 
+                                                                Scope=PrivateModuleScope; 
+                                                                Shared=true; 
+                                                                Declarations=
+                                                                [
+                                                                  { 
+                                                                    Declaration=ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); 
+                                                                    WithEvents=false
+                                                                  }
+                                                                ] 
+                                                              }
+                                                            )
+                                     ]; SubProcedures=[] }
