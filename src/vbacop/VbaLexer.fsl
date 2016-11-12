@@ -46,7 +46,6 @@ let typeSymbols = [
     "$", "String" ] |> Map.ofList
 
 let keywords = [
-    "to",   VbaParser.TO;
     "as",   VbaParser.AS;
     "call", VbaParser.CALL;
     "case", VbaParser.CASE;
@@ -100,8 +99,10 @@ let keywords = [
     "Public", VbaParser.PUBLIC;
     "Shared", VbaParser.SHARED;
     "put", VbaParser.PUT;
+    "New", VbaParser.NEW;
     "Not", VbaParser.NOT;
     "Or", VbaParser.OR;
+    "to",   VbaParser.TO;
     "TypeOf", VbaParser.TYPEOF;
     "Xor", VbaParser.XOR;
     "Explicit", VbaParser.EXPLICIT;

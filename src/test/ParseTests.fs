@@ -7,9 +7,14 @@ open FsUnit
 
 let doParse s = 
   let lexbuf = Microsoft.FSharp.Text.Lexing.LexBuffer<_>.FromString s
-  let result = VbaParser.start VbaLexer.tokenize lexbuf
-  printf "%A" result
-  result
+  VbaParser.start VbaLexer.tokenize lexbuf
+
+let getModuleDeclarations prog = 
+    let r = prog.Statements |> List.tryFind (fun x -> match x with | ModuleDeclarationList(_) -> true; | _ -> false)
+    match r with 
+      | Some(x) -> x
+      | _ -> failwith "Failed to find module declaration list in program"
+
 
 
 [<TestFixture>]
@@ -39,6 +44,17 @@ type ParserTests ()=
   member x.``Test Single option private`` ()=
                   doParse "Option Private Module
                   " |> should equal {  Statements = [(Option(PrivateModule))]; SubProcedures=[] }
+
+  [<Test>]
+  member x.``Test auto type declaration`` ()=
+                  doParse "Dim x as New Workbook
+                  " |> getModuleDeclarations 
+                    |> should equal (ModuleDeclarationList({ Scope=PrivateModuleScope;
+                                                             Shared=false;
+                                                             Declarations=[{
+                                                                            WithEvents=false;
+                                                                            Declaration=NormalVariableDeclaration({ Name=UntypedName("x"); Type=(Some (AutoType("Workbook"))) })
+                                                                          }]}))
 
   [<Test>]
   member x.``Test static 2d array declaration`` ()=
