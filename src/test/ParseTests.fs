@@ -59,61 +59,66 @@ type ParserTests ()=
   [<Test>]
   member x.``Test static 2d array declaration`` ()=
                   doParse "Dim arr(1 to 5, 10) as String
-                  " |> should equal { Statements=[ModuleDeclarationList({Scope=PrivateModuleScope;Shared=false;
-                                                                         Declarations=[
-                                                                                        { 
-                                                                                           WithEvents=false;
-                                                                                           Declaration=ArrayVariableDeclaration(
-                                                                                                                                { 
-                                                                                                                                  Name=UntypedName("arr"); 
-                                                                                                                                  Array=StaticArrayDeclaration([
-                                                                                                                                                                {LowerBound=Some 1; UpperBound=5};
-                                                                                                                                                                {LowerBound=None; UpperBound=10};
-                                                                                                                                                               ], (Some (Type("String"))))
-                                                                                                                                })}
+                  " |> getModuleDeclarations 
+                    |> should equal (ModuleDeclarationList({ Scope=PrivateModuleScope;Shared=false;
+                                                             Declarations=[
+                                                                            { 
+                                                                               WithEvents=false;
+                                                                               Declaration=ArrayVariableDeclaration(
+                                                                                                                    { 
+                                                                                                                      Name=UntypedName("arr"); 
+                                                                                                                      Array=StaticArrayDeclaration([
+                                                                                                                                                    {LowerBound=Some 1; UpperBound=5};
+                                                                                                                                                    {LowerBound=None; UpperBound=10};
+                                                                                                                                                   ], (Some (Type("String"))))
+                                                                                                                    })}
 
-                                                                                      ]})]; SubProcedures=[] }
+                                   ]}))
 
 
   [<Test>]
   member x.``Test Module Dim`` ()=
     doParse "Private Shared name() as Integer
-    " |> should equal { 
-                        Statements = [ ModuleDeclarationList(
-                                                              { 
-                                                                Scope=PrivateModuleScope; 
-                                                                Shared=true; 
-                                                                Declarations=
-                                                                [
-                                                                  { 
-                                                                    Declaration=ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); 
-                                                                    WithEvents=false
-                                                                  }
-                                                                ] 
-                                                              }
-                                                            )
-                                     ]; SubProcedures=[] }
+    " |> getModuleDeclarations 
+      |> should equal (ModuleDeclarationList(
+                                              { 
+                                                Scope=PrivateModuleScope; Shared=true; 
+                                                Declarations=
+                                                [
+                                                  { 
+                                                    Declaration=ArrayVariableDeclaration(
+                                                                                          { 
+                                                                                            Name=UntypedName("name"); 
+                                                                                            Array=DynamicArrayDeclaration(Some (Type("Integer"))) 
+                                                                                          }
+                                                                                        ); 
+                                                    WithEvents=false
+                                                  }
+                                                ] 
+                                              }
+                                            )
+                                     )
 
   [<Test>]
   member x.``Test Module Dim Double`` ()=
     doParse "Private Shared name() as Integer, name2 as String
-    " |> should equal { 
-                        Statements = [ ModuleDeclarationList(
-                                                              { 
-                                                                Scope=PrivateModuleScope; 
-                                                                Shared=true; 
-                                                                Declarations=
-                                                                [
-                                                                  { 
-                                                                    Declaration=ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); 
-                                                                    WithEvents=false
-                                                                  };
-                                                                  { 
-                                                                    Declaration=NormalVariableDeclaration({ Name=UntypedName("name2"); Type=Some(Type("String")) }); 
-                                                                    WithEvents=false
-                                                                  }
+    " |> getModuleDeclarations 
+      |> should equal (ModuleDeclarationList(
+                                              { 
+                                                Scope=PrivateModuleScope; 
+                                                Shared=true; 
+                                                Declarations=
+                                                [
+                                                  { 
+                                                    Declaration=ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); 
+                                                    WithEvents=false
+                                                  };
+                                                  { 
+                                                    Declaration=NormalVariableDeclaration({ Name=UntypedName("name2"); Type=Some(Type("String")) }); 
+                                                    WithEvents=false
+                                                  }
 
-                                                                ] 
-                                                              }
-                                                            )
-                                     ]; SubProcedures=[] }
+                                                ] 
+                                              }
+                                            )
+                      )
