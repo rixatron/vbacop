@@ -7,7 +7,10 @@ open FsUnit
 
 let doParse s = 
   let lexbuf = Microsoft.FSharp.Text.Lexing.LexBuffer<_>.FromString s
-  VbaParser.start VbaLexer.tokenize lexbuf
+  let result = VbaParser.start VbaLexer.tokenize lexbuf
+  printf "%A" result
+  result
+
 
 [<TestFixture>]
 type ParserTests ()=
@@ -50,6 +53,30 @@ type ParserTests ()=
                                                                     Declaration=ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); 
                                                                     WithEvents=false
                                                                   }
+                                                                ] 
+                                                              }
+                                                            )
+                                     ]; SubProcedures=[] }
+
+  [<Test>]
+  member x.``Test Module Dim Double`` ()=
+    doParse "Private Shared name() as Integer, name2 as String
+    " |> should equal { 
+                        Statements = [ ModuleDeclarationList(
+                                                              { 
+                                                                Scope=PrivateModuleScope; 
+                                                                Shared=true; 
+                                                                Declarations=
+                                                                [
+                                                                  { 
+                                                                    Declaration=ArrayVariableDeclaration({ Name=UntypedName("name"); Array=DynamicArrayDeclaration(Some (Type("Integer"))) }); 
+                                                                    WithEvents=false
+                                                                  };
+                                                                  { 
+                                                                    Declaration=NormalVariableDeclaration({ Name=UntypedName("name2"); Type=Some(Type("String")) }); 
+                                                                    WithEvents=false
+                                                                  }
+
                                                                 ] 
                                                               }
                                                             )

@@ -49,13 +49,13 @@ moduleStatement:
   | publicVariableDeclaration EOS { $1 }
 
 globalVariableDeclaration:
-  | GLOBAL moduleVariableDeclarationList { ModuleDeclarationList({ Scope=GlobalModuleScope; Shared=false; Declarations=$2 }) }
+  | GLOBAL moduleVariableDeclarationList { ModuleDeclarationList({ Scope=GlobalModuleScope; Shared=false; Declarations=(List.rev $2) }) }
 
 publicVariableDeclaration:
-  | PUBLIC optionalShared moduleVariableDeclarationList { ModuleDeclarationList({ Scope=PublicModuleScope; Shared=$2; Declarations=$3 }) }
+  | PUBLIC optionalShared moduleVariableDeclarationList { ModuleDeclarationList({ Scope=PublicModuleScope; Shared=$2; Declarations=(List.rev $3) }) }
 
 privateVariableDeclaration:
-  | privateVariableDeclarationStart optionalShared moduleVariableDeclarationList  { ModuleDeclarationList({ Scope=$1; Shared=$2; Declarations=$3 }) }
+  | privateVariableDeclarationStart optionalShared moduleVariableDeclarationList  { ModuleDeclarationList({ Scope=$1; Shared=$2; Declarations=(List.rev $3) }) }
 
 privateVariableDeclarationStart:
   | PRIVATE { PrivateModuleScope }
