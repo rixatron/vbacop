@@ -46,6 +46,7 @@ let typeSymbols = [
     "$", "String" ] |> Map.ofList
 
 let keywords = [
+    "to",   VbaParser.TO;
     "as",   VbaParser.AS;
     "call", VbaParser.CALL;
     "case", VbaParser.CASE;

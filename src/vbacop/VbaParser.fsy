@@ -95,9 +95,7 @@ asClause:
 
 arrayDim:
     | LPAREN RPAREN { fun t -> DynamicArrayDeclaration(t) }
-    | LPAREN boundsList RPAREN { fun t -> StaticArrayDeclaration((List.map getArrayDecl $2), t) }
-//  | LPAREN RPAREN { None : (int option * int option) list option }
-//  | LPAREN boundsList RPAREN { Some $1 }
+    | LPAREN boundsList RPAREN { fun t -> StaticArrayDeclaration(List.rev (List.map getArrayDecl $2), t) }
 
 boundsList:
   | dimSpec  { [$1] }

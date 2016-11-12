@@ -39,6 +39,26 @@ type ParserTests ()=
   member x.``Test Single option private`` ()=
                   doParse "Option Private Module
                   " |> should equal {  Statements = [(Option(PrivateModule))]; SubProcedures=[] }
+
+  [<Test>]
+  member x.``Test static 2d array declaration`` ()=
+                  doParse "Dim arr(1 to 5, 10) as String
+                  " |> should equal { Statements=[ModuleDeclarationList({Scope=PrivateModuleScope;Shared=false;
+                                                                         Declarations=[
+                                                                                        { 
+                                                                                           WithEvents=false;
+                                                                                           Declaration=ArrayVariableDeclaration(
+                                                                                                                                { 
+                                                                                                                                  Name=UntypedName("arr"); 
+                                                                                                                                  Array=StaticArrayDeclaration([
+                                                                                                                                                                {LowerBound=Some 1; UpperBound=5};
+                                                                                                                                                                {LowerBound=None; UpperBound=10};
+                                                                                                                                                               ], (Some (Type("String"))))
+                                                                                                                                })}
+
+                                                                                      ]})]; SubProcedures=[] }
+
+
   [<Test>]
   member x.``Test Module Dim`` ()=
     doParse "Private Shared name() as Integer
